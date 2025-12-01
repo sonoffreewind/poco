@@ -1,0 +1,11 @@
+# .gitignore
+build/
+.vscode/
+.idea/
+*.user
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+.DS_Store
