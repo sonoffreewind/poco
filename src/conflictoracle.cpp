@@ -1,12 +1,6 @@
 // conflictoracle.cpp
 #include "conflictoracle.hpp"
 
-int solve_mvc(const std::vector<std::pair<int, int>>& edges, 
-                int vertex_count, 
-                int optimal_size, 
-                double cutoff_time, 
-                int random_seed);    
-
 ConflictOracle::ConflictOracle(std::vector<Point>& _starts, std::vector<Point>& _goals)
     : N(_starts.size()), starts(_starts), goals(_goals),
     h_edge_list(N), c_edge_list(N),
@@ -96,7 +90,7 @@ int ConflictOracle::solve_mvc_lb(){
     size_t c = 0, i = 0;
     for (; i < N; ++i) {
         c += degrees[i];
-        if(c >= total_edge) break;
+        if(static_cast<int>(c) >= total_edge) break;
     }
     // return two lower bounds of minimum vertex cover
     return std::max(Match, int(i)+1);

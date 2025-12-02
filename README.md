@@ -12,10 +12,23 @@
 
 Based on rigorous geometric proofs, POCO provides an **$O(1)$ analytical methodology** to determine the conflict type between two agents over *all* their possible shortest paths, bypassing the combinatorial explosion of brute-force enumeration.
 
-It classifies any agent pair into three exhaustive types:
+### The Ternary Classification
+
+POCO classifies any agent pair into three exhaustive types:
 * 🔴 **Hostile**: Conflict is **inevitable**. All pairs of shortest paths conflict.
 * 🟢 **Free**: Conflict is **impossible**. No pairs of shortest paths conflict.
 * 🟡 **Compatible**: Conflict is **avoidable**. Both conflicting and non-conflicting path pairs exist.
+
+## 📋 Assumptions & Model
+
+The conflict classification logic relies on the following theoretical assumptions. The library is valid **only** when these conditions are met:
+
+* **Grid Environment**: Agents operate on a 4-neighbor grid graph where each vertex corresponds to integer coordinates $(x, y)$.
+* **Obstacle-Free**: The environment is assumed to be free of static obstacles (the algorithm is analytical and does not perform collision checks against a map).
+* **Unit-Sized Agents**: Each agent occupies a single vertex (a $1 \times 1$ grid cell) at any timestep.
+* **Shortest Path Constraint**: Each agent is assigned a start and goal vertex and is strictly constrained to travel along a **Manhattan shortest path**.
+* **Greedy Movement**: Agents move in discrete timesteps. For any timestep $t < T_i$ (before reaching the goal), an agent **must** move to an adjacent vertex that strictly decreases its Manhattan distance to the goal (i.e., waiting is not allowed mid-path).
+* **Terminal Waiting**: Upon reaching its goal at timestep $T_i$, an agent remains stationary at $g_i$ for all subsequent timesteps.
 
 ## 🚀 Key Features
 
@@ -29,11 +42,23 @@ It classifies any agent pair into three exhaustive types:
 POCO is built using CMake.
 
 ```bash
-git clone https://github.com/your-username/poco.git
+git clone https://github.com/sonoffreewind/poco.git
+
 cd poco
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j
+
+cmake -B build && make -C build
+
+# Run performance benchmarks
+build/benchmark 
+
+# Run simple usage examples
+build/simple_examples 
+
+# Run basic functionality tests
+build/test_basic 
+
+# Run conflict oracle tests
+build/test_oracle
 ```
 
 ## 💻 Quick Start
@@ -43,7 +68,7 @@ make -j
 Use `getConflictRelation` to instantly classify the relationship between two agents.
 
 ```cpp
-#include "poco/conflict.hpp"
+#include "conflict.hpp"
 
 Point s1(0, 0), g1(5, 0); // Agent 1
 Point s2(2, 0), g2(2, 5); // Agent 2
@@ -65,20 +90,23 @@ if (rel == ConflictRelation::Hostile) {
 Use `ConflictOracle` to maintain a dynamic conflict graph and compute the MVC heuristic.
 
 ```cpp
-#include "poco/conflictoracle.hpp"
+#include "conflictoracle.hpp"
 
 // Initialize oracle with static goals (one-time setup)
 ConflictOracle oracle(starts, goals);
 
-// ... Inside your solver's main loop ...
-// Update current positions and get heuristic
+// Get conflict realtion of agent i and agent j
+ConflictRelation rel = oracle.get_agent_relation(i,j);
+
+// Update agents to new_starts and get hostile graph's mvc size
 int mvc_val, hostile_edges, compatible_edges;
 // true = Calculate Fast Lower Bound (Built-in)
 // false = Calculate Exact MVC (Requires external solver injection)
-oracle.update_calmvc(current_positions, true, mvc_val, hostile_edges, compatible_edges);
+oracle.update_calmvc(new_starts, true, mvc_val, hostile_edges, compatible_edges);
 
-// Use mvc_val as h-value to guide search
-f_score = g_score + h_score + mvc_val;
+// Use mvc_val as a heuristic metric
+// such as an additional part of the evaluation function of the A* shortest path algorithm
+f = g + h + mvc_val;
 ```
 ### 3. Advanced: Injecting an Exact MVC Solver
 
@@ -95,7 +123,7 @@ The solver function must match the following signature:
 int my_mvc_solver(const std::vector<std::pair<int, int>>& edges, int num_vertices);
 ```
 
-**2.Register the Solver**
+**2. Register the Solver**
 ```cpp
 // ... inside your main code ...
 ConflictOracle oracle(starts, goals);
@@ -106,23 +134,23 @@ oracle.set_mvc_solver(my_mvc_solver);
 // Now, setting use_lb=false will trigger your injected solver
 int mvc;
 // ...
-oracle.update_calmvc(current_positions, false, mvc, hostile_edges, compatible_edges);
+oracle.update_calmvc(new_starts, false, mvc, hostile_edges, compatible_edges);
 ```
 ## 🔗 Related Projects
 
 This library serves as the core engine for our experiments. For the complete solver integration and reproduction of the paper's results, please visit:
 
-* **[LaCAM-POCO](https://github.com/your-username/lacam-poco)**: The LaCAM3 solver integrated with POCO, demonstrating significant improvements in solution quality and search efficiency.
+* **[LaCAM3-POCO](https://github.com/sonoffreewind/lacam3-poco)**: The LaCAM3 solver integrated with POCO, demonstrating significant improvements in solution quality and search efficiency.
 
 ## 📚 Citation
 
 If you use POCO in your research, please cite our paper:
 
 ```bibtex
-@article{YourName2025POCO,
+@article{Guo2025POCO,
   title={Hostile, Compatible, or Free: A Constant Time Classification of Pairwise Shortest Path Conflicts in Obstacle-Free MAPF},
-  author={Your Name and Co-authors},
-  journal={Submitted to Journal/Conference},
+  author={Lifeng Guo and Changhong Lu},
+  journal={Under Review},
   year={2025}
 }
 ```
